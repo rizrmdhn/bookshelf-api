@@ -13,33 +13,6 @@ const addBooksHandler = (request, h) => {
             reading,
     } = request.payload;
     
-    
-    
-    const id = nanoid(16);
-    const insertedAt = new Date().toISOString();
-    const updatedAt = insertedAt;
-    const finished = false;
-
-    const newBook = {
-        id, 
-        name, 
-        year, 
-        author, 
-        summary,
-        publisher, 
-        pageCount,
-        readPage, 
-        finished, 
-        reading, 
-        insertedAt,
-        updatedAt,
-    };
-
-    books.push(newBook);
-
-    /* This is a function to check if the book is added. */
-    const isSuccess = books.filter((book) => book.id === id).length > 0;
-    
     /* This is a function to check if the name is filled or not. If the name is not filled, the server
     will return a response with status code 400. */
     if (!name) {
@@ -61,6 +34,32 @@ const addBooksHandler = (request, h) => {
         response.code(400);
         return response;
     }
+    
+    const id = nanoid(16);
+    const finished = (pageCount === readPage);
+    const insertedAt = new Date().toISOString();
+    const updatedAt = insertedAt;
+    
+
+    const newBook = {
+        id, 
+        name, 
+        year, 
+        author, 
+        summary,
+        publisher, 
+        pageCount,
+        readPage, 
+        finished, 
+        reading, 
+        insertedAt,
+        updatedAt,
+    };
+
+    books.push(newBook);
+
+    /* This is a function to check if the book is added. */
+    const isSuccess = books.filter((book) => book.id === id).length > 0;
 
     /* This is a response for the server when the book is added. */
     if (isSuccess) {
@@ -86,31 +85,48 @@ const addBooksHandler = (request, h) => {
 };
 
 const getAllBooksHandler = (request, h) => {
-    
-          if (books.length > 0) {
-            const response = h.response({
-                status: 'success',
-                data: {
-                  books: books.map((book) => ({
-                      id: book.id,
-                      name: book.name,
-                      publisher: book.publisher,
-                    })),
-                  },    
-            });
-            response.code(200);
-            return response;
-        } 
-        const response = h.response({
-            status: 'success',
-            data: {
-              books: [],
-              },    
-        });
-        response.code(200);
-        return response;
+    const { name, reading, finished } = request.query;
+    let getBooks = books;
+    if (books.length > 0) {
+ 
+      if (name !== undefined) {
+        getBooks = getBooks.filter((book) => book.name.toLowerCase().includes(name.toLowerCase()));
+      }
+     
+      if (reading !== undefined) {
+        getBooks = getBooks.filter((book) => book.reading === !!Number(reading));
+      }
+ 
+      if (finished !== undefined) {
+        getBooks = getBooks.filter((book) => book.finished === !!Number(finished));
+ 
+      }
+      const response = h.response({
+        status: 'success',
+        data: {
+          books: getBooks.map((book) => ({
+              id: book.id,
+              name: book.name,
+              publisher: book.publisher,
+            })),
+          },    
+      });
+      response.code(200);
+      return response;
+ 
+    } else {
+      const response = h.response({
+        status: 'success',
+        data: {
+          books: [],
+        },
+    });
+      response.code(200);
+      return response;
+    }
+ };
+ 
             
-};
 
 const getBooksByIdHandler = (request, h) => {
     const { id } = request.params;
